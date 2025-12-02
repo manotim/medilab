@@ -1,0 +1,134 @@
+{# templates/appointments_list.html #}
+{% extends "starter-page.html" %}
+{% load static %}
+
+{% block title %}Booked Appointments | Medilab{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  {% for message in messages %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="card-title mb-0">Booked Appointments</h2>
+        <small class="text-muted">Total: {{ all|length }}</small>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Date &amp; Time</th>
+              <th>Department</th>
+              <th>Doctor</th>
+              <th>Message</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for appointment in all %}
+            <tr>
+              <td>{{ appointment.name }}</td>
+              <td><a href="mailto:{{ appointment.email }}">{{ appointment.email }}</a></td>
+              <td>{{ appointment.phone }}</td>
+              <td>{{ appointment.datetime }}</td>
+              <td>{{ appointment.department }}</td>
+              <td>{{ appointment.doctors }}</td>
+              <td class="text-truncate" style="max-width:220px;">{{ appointment.message }}</td>
+              <td class="text-center" style="min-width:170px;">
+                <a href="/show/edit/{{ appointment.id }}" class="btn btn-outline-warning btn-sm me-1">Edit</a>
+
+                {# Use your existing URL structure show/delete/<id> (no named URL). #}
+                <a href="/show/delete/{{ appointment.id }}"
+                   class="btn btn-outline-danger btn-sm me-1 delete-btn"
+                   data-bs-toggle="modal"
+                   data-bs-target="#confirmDeleteModal"
+                   data-delete-url="/show/delete/{{ appointment.id }}"
+                   data-appointment-name="{{ appointment.name|escape }}">
+                  Delete
+                </a>
+
+                <a href="#" class="btn btn-outline-success btn-sm">Pay</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# -------------------------
+   Confirm delete modal (Bootstrap 5)
+   ------------------------- #}
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteModalLabel">Confirm Delete</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <p>Are you sure you want to delete the appointment for <strong id="appointmentNamePlaceholder"></strong>?</p>
+        <p class="small text-muted mb-0">This action cannot be undone.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        {# The confirm button will navigate to the delete URL (keeps current delete behavior). #}
+        <a href="#" id="confirmDeleteBtn" class="btn btn-danger btn-sm">Yes, Delete</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# -------------------------
+   Inline JS to populate modal and handle confirmation
+   This requires Bootstrap's JS to be loaded (starter-page.html likely already includes it).
+   If not, include the Bootstrap JS bundle before </body>.
+   ------------------------- #}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Find all delete buttons
+  const deleteButtons = document.querySelectorAll('.delete-btn');
+  const modalName = document.getElementById('appointmentNamePlaceholder');
+  const confirmBtn = document.getElementById('confirmDeleteBtn');
+  const confirmModal = document.getElementById('confirmDeleteModal');
+
+  // When modal is shown, populate values from the clicked button
+  deleteButtons.forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      // Prevent default so the link won't navigate immediately
+      e.preventDefault();
+
+      const apptName = btn.getAttribute('data-appointment-name') || 'this appointment';
+      const deleteUrl = btn.getAttribute('data-delete-url');
+
+      // Fill modal content
+      if (modalName) modalName.textContent = apptName;
+      if (confirmBtn) confirmBtn.setAttribute('href', deleteUrl);
+
+      // Show the bootstrap modal via JS in case it wasn't auto shown by data-bs attributes
+      // (Bootstrap handles `data-bs-toggle="modal"`, but this ensures compatibility)
+      if (typeof bootstrap !== 'undefined') {
+        const bsModal = new bootstrap.Modal(confirmModal);
+        bsModal.show();
+      }
+    });
+  });
+});
+</script>
+
+{% endblock content %}
